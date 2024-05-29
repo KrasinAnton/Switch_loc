@@ -2,6 +2,7 @@ from telebot import types
 from my_telegram_bot.utils.user_check import is_allowed_user
 from my_telegram_bot.utils.image import send_image
 from my_telegram_bot.utils.log import log_activity
+
 def send_welcome(bot, message):
     print(f"Команда /start от пользователя: {message.from_user.username}")  # Отладочное сообщение
     if is_allowed_user(message.from_user.username):  # Проверяем доступ только здесь

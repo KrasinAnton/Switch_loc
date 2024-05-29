@@ -4,7 +4,6 @@ from threading import Lock
 conn = sqlite3.connect('database.db', check_same_thread=False)
 cursor = conn.cursor()
 lock = Lock()
-
 cursor.execute('''CREATE TABLE IF NOT EXISTS addresses (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     address TEXT NOT NULL,

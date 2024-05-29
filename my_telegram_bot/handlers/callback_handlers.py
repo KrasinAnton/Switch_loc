@@ -1,7 +1,6 @@
 from telebot import types
 from threading import Lock
 from my_telegram_bot.utils.image import send_image
-
 from my_telegram_bot.utils.log import log_activity
 from my_telegram_bot.utils.user_check import is_allowed_user
 from my_telegram_bot.database.db_helper import cursor, conn

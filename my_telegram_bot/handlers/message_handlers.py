@@ -1,6 +1,5 @@
 from .command_handlers import handle_command
 
-
 def register_handlers(bot):
     @bot.message_handler(func=lambda message: True)
     def handle_message(message):

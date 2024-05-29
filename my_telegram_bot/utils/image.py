@@ -1,5 +1,4 @@
 import os
-
 def send_image(chat_id, bot):
     image_path = r"D:\UrFU\Items\2_course\2_semestr\Sovr_yazuki_program\pythonProject\Switch_loc\my_telegram_bot\Files\We1a.mp4"
     if os.path.exists(image_path):

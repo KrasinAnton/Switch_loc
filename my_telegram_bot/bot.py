@@ -1,6 +1,5 @@
 import time
 import telebot
-
 from my_telegram_bot.handlers import callback_handlers, command_handlers
 from config import TOKEN
 from handlers import message_handlers
