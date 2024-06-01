@@ -35,11 +35,9 @@ def send_welcome_by_chat_id(chat_id, bot):
 def find_plinth(bot, message):
     address = message.text
     if not address[0].isupper():
-        bot.reply_to(message, "Адрес должен начинаться с прописной буквы! Введи адрес снова:")
+        bot.reply_to(message, "Адрес должен начинаться с заглавной буквы! Введи адрес снова:")
         wait_for_address_response(message.chat.id, find_plinth, bot)
         return
-
-    log_activity(message.from_user.username, f'Поиск плинтов по адресу {address}')
 
     with lock:
         existing_address = get_address(address)
@@ -59,7 +57,7 @@ def find_plinth(bot, message):
 def add_address_handler(bot, message):
     address = message.text
     if not address[0].isupper():
-        bot.reply_to(message, "Адрес должен начинаться с прописной буквы! Введи адрес снова:")
+        bot.reply_to(message, "Адрес должен начинаться с заглавной буквы! Введи адрес снова:")
         wait_for_address_response(message.chat.id, add_address_handler, bot)
         return
 
@@ -119,6 +117,7 @@ def register_handlers(bot):
     def handle_callback_query(call):
         try:
             if not is_allowed_user(call.from_user.username):
+                log_activity(call.from_user.username, 'Недопустимый пользователь')
                 bot.answer_callback_query(call.id, "Вы не имеете доступа к этому боту.")
                 return
 

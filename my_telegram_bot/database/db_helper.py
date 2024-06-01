@@ -1,26 +1,8 @@
-from sqlalchemy import Column, Integer, String
-from . import Base, SessionLocal, engine
+from . import SessionLocal
 from threading import Lock
-
+from .models import Address, Log, Feedback
 
 lock = Lock()
-
-class Address(Base):
-    __tablename__ = 'addresses'
-    id = Column(Integer, primary_key=True, index=True)
-    address = Column(String, nullable=False)
-    info = Column(String, nullable=False)
-    added_info = Column(Integer, default=0)
-
-class Log(Base):
-    __tablename__ = 'logs'
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(String, nullable=False)
-    username = Column(String, nullable=False)
-    action = Column(String, nullable=False)
-
-# Создание всех таблиц в базе данных
-Base.metadata.create_all(bind=engine)
 
 def get_address(address):
     with lock:
@@ -46,10 +28,18 @@ def update_address_info(address, info):
             session.commit()
         session.close()
 
-def log_activity_to_db(timestamp, username, action):
+def log_activity_to_db(timestamp, username, action, feedback=None):
     with lock:
         session = SessionLocal()
-        log_entry = Log(timestamp=timestamp, username=username, action=action)
+        log_entry = Log(timestamp=timestamp, username=username, action=action, feedback=feedback)
         session.add(log_entry)
+        session.commit()
+        session.close()
+
+def add_feedback(username, text):
+    with lock:
+        session = SessionLocal()
+        feedback_entry = Feedback(username=username, text=text)
+        session.add(feedback_entry)
         session.commit()
         session.close()

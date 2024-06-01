@@ -1,10 +1,17 @@
 import time
 import telebot
 from my_telegram_bot.handlers import callback_handlers, command_handlers
-from config import TOKEN
+from my_telegram_bot.config import TOKEN
 from handlers import message_handlers
+import os
+import sys
 
 bot = telebot.TeleBot(TOKEN)
+
+
+
+# Добавление текущего каталога в путь поиска Python
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Register command handlers
 command_handlers.register_handlers(bot)

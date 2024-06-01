@@ -1,4 +1,5 @@
 from telebot import types
+from my_telegram_bot.database.db_helper import add_feedback
 from my_telegram_bot.utils.user_check import is_allowed_user
 from my_telegram_bot.utils.image import send_image
 from my_telegram_bot.utils.log import log_activity
@@ -30,11 +31,12 @@ def feedback(bot, message):
 
 def handle_feedback(bot, message):
     feedback_text = message.text
-    log_activity(message.from_user.username, f'Фидбэк: {feedback_text}')
+    add_feedback(message.from_user.username, feedback_text)
     markup = types.InlineKeyboardMarkup()
     item_main = types.InlineKeyboardButton('На главную', callback_data='main')
     markup.add(item_main)
-    bot.send_message(message.chat.id, "Спасибо!", reply_markup=markup)
+    bot.send_message(message.chat.id, "Спасибо за ваш отзыв!", reply_markup=markup)
+
 
 def register_handlers(bot):
     @bot.message_handler(commands=['start'])
