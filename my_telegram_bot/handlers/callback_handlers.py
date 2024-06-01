@@ -3,7 +3,7 @@ from threading import Lock
 from my_telegram_bot.utils.image import send_image
 from my_telegram_bot.utils.log import log_activity
 from my_telegram_bot.utils.user_check import is_allowed_user
-from my_telegram_bot.database.db_helper import cursor, conn
+from my_telegram_bot.database.db_helper import get_address, add_address, update_address_info
 
 lock = Lock()
 
@@ -42,11 +42,10 @@ def find_plinth(bot, message):
     log_activity(message.from_user.username, f'Поиск плинтов по адресу {address}')
 
     with lock:
-        cursor.execute("SELECT * FROM addresses WHERE address=?", (address,))
-        existing_address = cursor.fetchone()
+        existing_address = get_address(address)
 
     if existing_address:
-        info = existing_address[2]
+        info = existing_address.info
         markup = types.InlineKeyboardMarkup()
         item_main = types.InlineKeyboardButton('На главную', callback_data='main')
         markup.add(item_main)
@@ -57,21 +56,20 @@ def find_plinth(bot, message):
         markup.add(item_main)
         bot.reply_to(message, f"Информация по адресу '{address}' не найдена.", reply_markup=markup)
 
-def add_address(bot, message):
+def add_address_handler(bot, message):
     address = message.text
     if not address[0].isupper():
         bot.reply_to(message, "Адрес должен начинаться с прописной буквы! Введи адрес снова:")
-        wait_for_address_response(message.chat.id, add_address, bot)
+        wait_for_address_response(message.chat.id, add_address_handler, bot)
         return
 
     log_activity(message.from_user.username, f'Добавление нового адреса {address}')
 
     with lock:
-        cursor.execute("SELECT * FROM addresses WHERE address=?", (address,))
-        existing_address = cursor.fetchone()
+        existing_address = get_address(address)
 
     if existing_address:
-        info = existing_address[2]
+        info = existing_address.info
         markup = types.InlineKeyboardMarkup()
         item_update_info = types.InlineKeyboardButton('Изменить', callback_data=f'update_info:{address}')
         item_add_info = types.InlineKeyboardButton('Добавить', callback_data=f'add_info:{address}')
@@ -89,9 +87,7 @@ def add_address(bot, message):
 def add_info_to_new_address(bot, message, address):
     info = message.text
     log_activity(message.from_user.username, f'Добавил новую информацию "{info}" для адреса {address}')
-    with lock:
-        cursor.execute("INSERT INTO addresses (address, info) VALUES (?, ?)", (address, info))
-    conn.commit()
+    add_address(address, info)
     markup = types.InlineKeyboardMarkup()
     item_main = types.InlineKeyboardButton('На главную', callback_data='main')
     markup.add(item_main)
@@ -99,14 +95,10 @@ def add_info_to_new_address(bot, message, address):
 
 def append_info(bot, message, address):
     additional_info = message.text
-    with lock:
-        cursor.execute("SELECT info FROM addresses WHERE address=?", (address,))
-        existing_info = cursor.fetchone()[0]
-        new_info = f"{existing_info} {additional_info}"
+    existing_info = get_address(address).info
+    new_info = f"{existing_info} {additional_info}"
     log_activity(message.from_user.username, f'Добавил дополнительную информацию "{additional_info}" для адреса {address}')
-    with lock:
-        cursor.execute("UPDATE addresses SET info = ? WHERE address = ?", (new_info, address))
-    conn.commit()
+    update_address_info(address, new_info)
     markup = types.InlineKeyboardMarkup()
     item_main = types.InlineKeyboardButton('На главную', callback_data='main')
     markup.add(item_main)
@@ -116,9 +108,7 @@ def append_info(bot, message, address):
 def update_info(bot, message, address):
     new_info = message.text
     log_activity(message.from_user.username, f'Обновил информацию на "{new_info}" для адреса {address}')
-    with lock:
-        cursor.execute("UPDATE addresses SET info = ? WHERE address = ?", (new_info, address))
-    conn.commit()
+    update_address_info(address, new_info)
     markup = types.InlineKeyboardMarkup()
     item_main = types.InlineKeyboardButton('На главную', callback_data='main')
     markup.add(item_main)
@@ -138,7 +128,7 @@ def register_handlers(bot):
                 prompt_for_address(call.message.chat.id, find_plinth, bot)
             elif call.data == 'add_address':
                 bot.answer_callback_query(call.id)
-                prompt_for_address(call.message.chat.id, add_address, bot)
+                prompt_for_address(call.message.chat.id, add_address_handler, bot)
             elif call.data.startswith('update_info:'):
                 address = call.data.split(':')[1]
                 bot.answer_callback_query(call.id)
@@ -149,11 +139,9 @@ def register_handlers(bot):
                 bot.answer_callback_query(call.id)
                 bot.send_message(call.message.chat.id, f"Введите дополнительную информацию для адреса '{address}':")
                 bot.register_next_step_handler(call.message, lambda msg: append_info(bot, msg, address))
-            elif call.data == 'main':
+            elif call.data == 'main' or call.data == 'cancel':
+                bot.clear_step_handler_by_chat_id(call.message.chat.id)  # Удаление предыдущих обработчиков
                 bot.answer_callback_query(call.id)
-                send_welcome_by_chat_id(call.message.chat.id, bot)
-            elif call.data == 'cancel':
-                bot.answer_callback_query(call.id, "Действие отменено.")
                 send_welcome_by_chat_id(call.message.chat.id, bot)
             else:
                 bot.answer_callback_query(call.id, "Неизвестная команда.")

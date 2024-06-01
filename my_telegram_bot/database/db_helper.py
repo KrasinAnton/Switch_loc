@@ -1,28 +1,55 @@
-import sqlite3
+from sqlalchemy import Column, Integer, String
+from . import Base, SessionLocal, engine
 from threading import Lock
 
-conn = sqlite3.connect('database.db', check_same_thread=False)
-cursor = conn.cursor()
+
 lock = Lock()
-cursor.execute('''CREATE TABLE IF NOT EXISTS addresses (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    address TEXT NOT NULL,
-                    info TEXT NOT NULL,
-                    added_info INTEGER DEFAULT 0
-                )''')
-conn.commit()
+
+class Address(Base):
+    __tablename__ = 'addresses'
+    id = Column(Integer, primary_key=True, index=True)
+    address = Column(String, nullable=False)
+    info = Column(String, nullable=False)
+    added_info = Column(Integer, default=0)
+
+class Log(Base):
+    __tablename__ = 'logs'
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(String, nullable=False)
+    username = Column(String, nullable=False)
+    action = Column(String, nullable=False)
+
+# Создание всех таблиц в базе данных
+Base.metadata.create_all(bind=engine)
 
 def get_address(address):
     with lock:
-        cursor.execute("SELECT * FROM addresses WHERE address=?", (address,))
-        return cursor.fetchone()
+        session = SessionLocal()
+        result = session.query(Address).filter(Address.address == address).first()
+        session.close()
+        return result
 
 def add_address(address, info):
     with lock:
-        cursor.execute("INSERT INTO addresses (address, info) VALUES (?, ?)", (address, info))
-        conn.commit()
+        session = SessionLocal()
+        new_address = Address(address=address, info=info)
+        session.add(new_address)
+        session.commit()
+        session.close()
 
 def update_address_info(address, info):
     with lock:
-        cursor.execute("UPDATE addresses SET info = ? WHERE address = ?", (info, address))
-        conn.commit()
+        session = SessionLocal()
+        address_record = session.query(Address).filter(Address.address == address).first()
+        if address_record:
+            address_record.info = info
+            session.commit()
+        session.close()
+
+def log_activity_to_db(timestamp, username, action):
+    with lock:
+        session = SessionLocal()
+        log_entry = Log(timestamp=timestamp, username=username, action=action)
+        session.add(log_entry)
+        session.commit()
+        session.close()
