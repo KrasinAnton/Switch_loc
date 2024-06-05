@@ -7,12 +7,19 @@ from datetime import datetime
 
 from my_telegram_bot.config import DATABASE
 
+# Формируем URL для подключения к базе данных с использованием psycopg2
 DATABASE_URL = f"postgresql+psycopg2://{DATABASE['user']}:{DATABASE['password']}@{DATABASE['host']}:{DATABASE['port']}/{DATABASE['dbname']}?client_encoding=utf8"
 
+# Создаем объект engine для подключения к базе данных
 engine = create_engine(DATABASE_URL)
+
+# Создаем фабрику сессий для взаимодействия с базой данных
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Базовый класс для декларативного определения моделей
 Base = declarative_base()
 
+# Определение модели Address
 class Address(Base):
     __tablename__ = 'addresses'
     id = Column(Integer, primary_key=True, index=True)
@@ -20,6 +27,7 @@ class Address(Base):
     info = Column(String, nullable=False)
     added_info = Column(Integer, default=0)
 
+# Определение модели Log
 class Log(Base):
     __tablename__ = 'logs'
     id = Column(Integer, primary_key=True, index=True)
@@ -28,6 +36,7 @@ class Log(Base):
     action = Column(String, nullable=False)
     feedback = Column(String, nullable=True)
 
+# Определение модели Feedback
 class Feedback(Base):
     __tablename__ = 'feedback'
     id = Column(Integer, primary_key=True, index=True)
